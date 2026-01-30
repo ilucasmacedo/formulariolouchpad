@@ -13,6 +13,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verificar se as variáveis de ambiente estão configuradas
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('❌ SUPABASE_SERVICE_ROLE_KEY não configurada')
+      return NextResponse.json(
+        { error: 'Configuração do servidor incompleta. Verifique as variáveis de ambiente.' },
+        { status: 500 }
+      )
+    }
+
     // Inserir dados no Supabase
     const { data, error } = await supabaseAdmin
       .from('inscricoes')

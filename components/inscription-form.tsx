@@ -26,10 +26,56 @@ export function InscriptionForm() {
     termos: false,
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [submitMessage, setSubmitMessage] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Form submitted:", formData)
-    // Aqui você pode adicionar a lógica de envio do formulário
+    setIsSubmitting(true)
+    setSubmitStatus('idle')
+    setSubmitMessage('')
+
+    try {
+      const response = await fetch('/api/inscricao', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSubmitStatus('success')
+        setSubmitMessage(data.message || 'Inscrição realizada com sucesso!')
+        // Limpar formulário
+        setFormData({
+          nomeCompleto: "",
+          email: "",
+          linkedin: "",
+          cidadeEstado: "",
+          nivelAtual: "",
+          preferencia: "",
+          tecnologias: "",
+          compromisso: "",
+          periodo: "",
+          problemaApp: "",
+          motivacao: "",
+          termos: false,
+        })
+      } else {
+        setSubmitStatus('error')
+        setSubmitMessage(data.error || data.details || 'Erro ao enviar inscrição')
+      }
+    } catch (error: any) {
+      setSubmitStatus('error')
+      setSubmitMessage(error.message || 'Erro ao conectar com o servidor')
+      console.error('Erro ao enviar formulário:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -43,10 +89,10 @@ export function InscriptionForm() {
         </div>
 
         <div className="bg-neutral-900 border border-orange-500/20 rounded-2xl p-8 md:p-12">
-          <div className="mb-10 p-6 bg-orange-500/10 border border-orange-500/30 rounded-xl">
+            <div className="mb-10 p-6 bg-orange-500/10 border border-orange-500/30 rounded-xl">
             <p className="text-white/90 leading-relaxed">
               <span className="text-orange-500 font-bold">Você tem 2 horas por dia para mudar sua carreira?</span> O
-              Squad não é um curso teórico. É uma fábrica de sucesso. Aqui você será alocado em uma squad de 5 pessoas
+              Squad não é um curso teórico. É uma fábrica de sucesso. Aqui você será alocado em uma squad de até 5 pessoas
               para desenvolver um aplicativo real, com mentoria e foco em empreendedorismo. Não cobramos mensalidade;
               trabalhamos no modelo de parceria (Equity). Se o app crescer, você é sócio.
             </p>
@@ -336,12 +382,35 @@ export function InscriptionForm() {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6">
+            <div className="pt-6 space-y-4">
+              {submitStatus === 'success' && (
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <p className="text-green-500 font-semibold">✅ {submitMessage}</p>
+                </div>
+              )}
+
+              {submitStatus === 'error' && (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <p className="text-red-500 font-semibold">❌ {submitMessage}</p>
+                  <p className="text-white/80 text-sm mt-2">
+                    Verifique o console do navegador (F12) para mais detalhes.
+                  </p>
+                </div>
+              )}
+
               <Button
                 type="submit"
-                className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold text-lg py-6 rounded-xl transition-all duration-300 hover:scale-[1.02]"
+                disabled={isSubmitting}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold text-lg py-6 rounded-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Enviar Inscrição
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></span>
+                    Enviando...
+                  </span>
+                ) : (
+                  'Enviar Inscrição'
+                )}
               </Button>
             </div>
 
@@ -349,7 +418,7 @@ export function InscriptionForm() {
             <div className="mt-8 p-6 bg-orange-500/10 border border-orange-500/30 rounded-xl text-center">
               <p className="text-white/90 leading-relaxed">
                 <span className="text-orange-500 font-bold">Obrigado!</span> Nossa equipe (e nossa IA) analisará seu
-                perfil. Se selecionado, você receberá um convite para uma entrevista rápida de 15 minutos via vídeo.
+                perfil. Se selecionado, você receberá um convite para uma entrevista rápida de 15 minutos.
                 Fique atento ao seu e-mail!
               </p>
             </div>
